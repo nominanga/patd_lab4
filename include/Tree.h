@@ -1,7 +1,6 @@
 #pragma once
 #include <string>
 #include <sstream>
-
 #include "Node.h"
 
 template <typename T>
@@ -10,30 +9,21 @@ private:
     Node<T>* root;
     int node_count;
 
-    void insert(Node<T>*& node, T value) {
+    void insert(Node<T>*& node, T data) {
         if (!node) {
-            node = new Node<T>(value);
+            node = new Node<T>(data);
             node_count++;
+        } else if (data < node->data) {
+            insert(node->left, data);
         } else {
-            if (value < node->value) {
-                insert(node->left, value);
-            }
-            else
-                insert(node->right, value);
+            insert(node->right, data);
         }
     }
 
-    bool contains(Node<T> *node, T value) {
-        if (!node) {
-            return false;
-        }
-        if (node->value == value) {
-            return true;
-        }
-
-        if (value < node->value)
-            return contains(node->left, value);
-        return contains(node->right, value);
+    bool contains(Node<T>* node, T data) const {
+        if (!node) return false;
+        if (node->data == data) return true;
+        return data < node->data ? contains(node->left, data) : contains(node->right, data);
     }
 
     void clear(Node<T>* node) {
@@ -43,77 +33,61 @@ private:
         delete node;
     }
 
-    void remove(Node<T>*& node, T value) {
+    void remove(Node<T>*& node, T data) {
         if (!node) return;
-        if (value < node->value)
-            remove(node->left, value);
-        else if (value > node->value)
-            remove(node->right, value);
+        if (data < node->data)
+            remove(node->left, data);
+        else if (data > node->data)
+            remove(node->right, data);
         else {
             if (!node->left && !node->right) {
                 delete node;
                 node = nullptr;
                 node_count--;
-                return;
-            }
-            if (!node->left) {
+            } else if (!node->left) {
                 Node<T>* temp = node->right;
                 delete node;
                 node = temp;
                 node_count--;
-                return;
-            }
-            if (!node->right) {
+            } else if (!node->right) {
                 Node<T>* temp = node->left;
                 delete node;
                 node = temp;
                 node_count--;
-                return;
+            } else {
+                Node<T>* minRight = findMin(node->right);
+                node->data = minRight->data;
+                remove(node->right, minRight->data);
             }
-
-            Node<T>* min_in_right = BinaryTree::findMin(node->right);
-            node->data = min_in_right->data;
-            remove(node->right, min_in_right->data);
         }
-
     }
 
-    void serialize(Node<T>* node, std::string& order, std::ostream& out) {
+    void serialize(Node<T>* node, const std::string& order, std::ostream& out) const {
         if (!node) return;
-
-        for (const char c : order) {
-            if (c == 'K') out << node->data << "(";
+        for (char c : order) {
+            if (c == 'K') out << node->data << " ";
             else if (c == 'L') serialize(node->left, order, out);
             else if (c == 'P') serialize(node->right, order, out);
-            out << ")";
         }
     }
-
 
 public:
-    static Node<T>* findMin(Node<T>* node) {
-        if (!node) return nullptr;
-        while (node->left) {
-            node = node->left;
-        }
-        return node;
-    }
+    explicit BinaryTree() : root(nullptr), node_count(0) {}
 
-    explicit BinaryTree() : root(nullptr), node_count(0) {};
     ~BinaryTree() {
         clear(root);
     }
 
-    void insert(T value) {
-        insert(root, value);
+    void insert(T data) {
+        insert(root, data);
     }
 
-    bool contains(T value) const {
-        return contains(root, value);
+    bool contains(T data) const {
+        return contains(root, data);
     }
 
-    void remove(T value) {
-        remove(root, value);
+    void remove(T data) {
+        remove(root, data);
     }
 
     std::string toString(const std::string& order) const {
@@ -128,12 +102,19 @@ public:
 
     void fromString(const std::string& seria) {
         clear(root);
+        root = nullptr;
+        node_count = 0;
         std::istringstream in(seria);
-        T value;
-        while (in >> value) {
-            insert(root, value);
+        T data;
+        while (in >> data) {
+            insert(data);
         }
     }
 
-
+    static Node<T>* findMin(Node<T>* node) {
+        while (node && node->left) {
+            node = node->left;
+        }
+        return node;
+    }
 };

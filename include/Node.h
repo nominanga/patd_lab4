@@ -1,14 +1,10 @@
 #pragma once
 
 template <typename T>
-class Node {
-public:
+struct Node {
     T data;
-    Node<T>* right;
     Node<T>* left;
-    explicit Node<T>(T item) : data(item), right(nullptr), left(nullptr) {};
-    ~Node() {
-        delete left;
-        delete right;
-    }
+    Node<T>* right;
+
+    explicit Node(T data) : data(data), left(nullptr), right(nullptr) {}
 };
